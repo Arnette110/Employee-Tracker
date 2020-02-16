@@ -42,6 +42,7 @@ function start() {
         "View all roles",
         "Add role",
         "Remove role",
+        "EXIT",
       ],
     })
     .then(function(answer) {
@@ -66,68 +67,86 @@ function start() {
         addRole();
       } else if (answer.whatDo === "Remove role") {
         removeRole();
-      } else {
+      } else if (answer.whatDo === "EXIT") {
         connection.end();
       }
     });
 }
 
+let role = [];
+
 // function to handle posting new items up for auction
 function addEmployee() {
-  connection.query(
-    "SELECT jobrole.title FROM employee INNER JOIN jobrole ON employee.role_id = jobrole.id",
-    (err, result) => {
+  connection.query("SELECT * FROM jobrole", (err, res) => {
+    if (err) throw err;
+    const roles = res.map(object => {
+      return {
+        name: `${object.title}`,
+        value: object.id,
+      };
+    });
+    roles.unshift({
+      title: "N/A",
+      id: null,
+    });
+    console.log(roles);
+    connection.query("SELECT * FROM employee", (err, res) => {
       if (err) throw err;
-      
-      result.forEach(element => {
-        let title = element.title;
-        return title;
+      const employees = res.map(object => {
+        return {
+          name: `${object.firstname} ${object.lastname}`,
+          value: object.id,
+        };
       });
-      // inquirer
-      //   .prompt([
-      //     {
-      //       name: "firstName",
-      //       type: "input",
-      //       message: "What is the employee's first name?",
-      //     },
-      //     {
-      //       name: "lastName",
-      //       type: "input",
-      //       message: "What is the employee's last name?",
-      //     },
-      //     {
-      //       name: "role_id",
-      //       type: "list",
-      //       message: "what is the employee's role?",
-      //       choices: ["HR Lady", "Scientist", "Lawyer"],
-      //     },
-      //   ])
-      //   .then(function(answer) {
-      //     // when finished prompting, insert a new item into the db with that info
-      //     connection.query(
-      //       "INSERT INTO employee SET ?",
-      //       {
-      //         firstname: answer.firstName,
-      //         lastname: answer.lastName,
-      //       },
-      //       "INSERT INTO jobrole SET ?",
-      //       {
-      //         jobrole: answer.title,
-      //       },
-      //       function(err) {
-      //         if (err) throw err;
-      //         console.log("successfully added an employee");
-      //         // re-prompt the user for if they want to bid or post
-      //         start();
-      //       },
-      //     );
-      //   });
-    }
-  );
-    
-  // "prompt for info about the item being put up for auction"
-  
-};
+      employees.unshift({
+        name: "no manager",
+        value: null,
+      });
+      inquirer
+        .prompt([
+          {
+            name: "firstName",
+            type: "input",
+            message: "What is the employee's first name?",
+          },
+          {
+            name: "lastName",
+            type: "input",
+            message: "What is the employee's last name?",
+          },
+          {
+            name: "role_id",
+            type: "list",
+            message: "what is the employee's role?",
+            choices: roles,
+          },
+          {
+            name: "manager",
+            type: "list",
+            message: "Who is the employee's manager?",
+            choices: employees,
+          },
+        ])
+        .then(function(answer) {
+          console.log(answer);
+          // when finished prompting, insert a new item into the db with that info
+          connection.query(
+            "INSERT INTO employee SET ?",
+            {
+              firstname: answer.firstName,
+              lastname: answer.lastName,
+              role_id: answer.role_id,
+              manager_id: answer.manager,
+            },
+            function(err) {
+              if (err) throw err;
+            },
+            start(),
+          );
+        });
+    });
+  });
+}
 
 function viewAll() {
   // query the database for all items being auctioned
@@ -140,30 +159,30 @@ function viewAll() {
       // console.log(db);
       console.table(db);
       start();
-    }
+    },
   );
-};
+}
 
-function viewAllDept(){
+function viewAllDept() {
   connection.query(
     "SELECT employee.firstname, employee.lastname,department.departmentName FROM employee INNER JOIN jobrole ON employee.role_id = jobrole.id INNER JOIN department ON jobrole.department_id = department.id;",
     (err, results) => {
       if (err) throw err;
       console.table(results);
       start();
+    },
+  );
+}
+
+function viewAllMgr() {
+  connection.query(
+    "SELECT employee.firstname, employee.lastname FROM employee INNER JOIN employee AS manager ON employee.manager_id = employee.id",
+    (err, results) => {
+      if (err) throw err;
+      console.table(results);
     }
   );
-};
-
-// function viewAllMgr() {
-//   connection.query(
-//     "SELECT employee.firstname, employee.lastname FROM employee INNER JOIN employee AS manager ON employee.manager_id = employee.id",
-//     (err, results) => {
-//       if (err) throw err;
-//       console.table(results);
-//     }
-//   );
-// }
+}
 
 // function addEmployee() {
 //   connection.query(
