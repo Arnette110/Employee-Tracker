@@ -36,6 +36,7 @@ function start() {
         "View all employees by Department",
         "View all employees by Manager",
         "Add employee",
+        "Add department",
         "Remove employee",
         "Update employee role",
         "Update employee manager",
@@ -53,18 +54,22 @@ function start() {
         viewAllDept();
       } else if (answer.whatDo === "View all employees by Manager") {
         viewAllMgr();
+      } else if (answer.whatDo === "View all roles") {
+        viewAllRoles();
+      } else if (answer.whatDo === "View all departments") {
+        viewAllDepts();
       } else if (answer.whatDo === "Add employee") {
         addEmployee();
+      } else if (answer.whatDo === "Add department") {
+        addDepartment();
+      } else if (answer.whatDo === "Add role") {
+        addRole();
       } else if (answer.whatDo === "Remove employee") {
         removeEmployee();
       } else if (answer.whatDo === "Update employee role") {
         updateRole();
       } else if (answer.whatDo === "Update employee manager") {
         updateMgr();
-      } else if (answer.whatDo === "View all roles") {
-        viewAllRoles();
-      } else if (answer.whatDo === "Add role") {
-        addRole();
       } else if (answer.whatDo === "Remove role") {
         removeRole();
       } else if (answer.whatDo === "EXIT") {
@@ -73,9 +78,7 @@ function start() {
     });
 }
 
-let role = [];
-
-// function to handle posting new items up for auction
+// function to add Employee to db
 function addEmployee() {
   connection.query("SELECT * FROM jobrole", (err, res) => {
     if (err) throw err;
@@ -86,10 +89,10 @@ function addEmployee() {
       };
     });
     roles.unshift({
-      title: "N/A",
-      id: null,
+      name: "N/A",
+      value: null,
     });
-    console.log(roles);
+
     connection.query("SELECT * FROM employee", (err, res) => {
       if (err) throw err;
       const employees = res.map(object => {
@@ -148,6 +151,80 @@ function addEmployee() {
   });
 }
 
+// function to add a department to db
+function addDepartment() {
+  inquirer
+    .prompt([
+      {
+        name: "department",
+        type: "input",
+        message: "What department would yo like to add?",
+      },
+    ])
+    .then(function(answer) {
+      console.table(answer);
+      // when finished prompting, insert a new item into the db with that info
+      connection.query(
+        "INSERT INTO department SET ?",
+        {
+          departmentName: answer.department,
+        },
+        function(err) {
+          if (err) throw err;
+        },
+        start(),
+      );
+    });
+}
+
+function addRole() {
+  connection.query("SELECT * FROM department", (err, res) => {
+    if (err) throw err;
+    const departments = res.map(object => {
+      return {
+        name: `${object.departmentName}`,
+        value: object.id,
+      };
+    });
+
+    inquirer
+      .prompt([
+        {
+          name: "title",
+          type: "input",
+          message: "What role would you like to add?",
+        },
+        {
+          name: "salary",
+          type: "input",
+          message: "What is the starting salary for this role?",
+        },
+        {
+          name: "department_id",
+          type: "list",
+          message: "what department does this role belong to?",
+          choices: departments,
+        },
+      ])
+      .then(function(answer) {
+        console.log(answer);
+        // when finished prompting, insert a new item into the db with that info
+        connection.query(
+          "INSERT INTO jobrole SET ?",
+          {
+            title: answer.title,
+            salary: answer.salary,
+            department_id: answer.department_id,
+          },
+          function(err) {
+            if (err) throw err;
+          },
+          start(),
+        );
+      });
+  });
+}
+
 function viewAll() {
   // query the database for all items being auctioned
   connection.query(
@@ -158,14 +235,16 @@ function viewAll() {
       let db = results;
       // console.log(db);
       console.table(db);
+
       start();
     },
   );
 }
 
-function viewAllDept() {
+
+function viewAllDepts() {
   connection.query(
-    "SELECT employee.firstname, employee.lastname,department.departmentName FROM employee INNER JOIN jobrole ON employee.role_id = jobrole.id INNER JOIN department ON jobrole.department_id = department.id;",
+    "SELECT departmentName FROM department;",
     (err, results) => {
       if (err) throw err;
       console.table(results);
@@ -176,16 +255,11 @@ function viewAllDept() {
 
 function viewAllMgr() {
   connection.query(
-    "SELECT employee.firstname, employee.lastname FROM employee INNER JOIN employee AS manager ON employee.manager_id = employee.id",
+    "SELECT employee.firstname, employee.lastname FROM employee INNER JOIN employee AS manager ON employee.id = employee.manager_id",
     (err, results) => {
       if (err) throw err;
       console.table(results);
-    }
+      start();
+    },
   );
 }
-
-// function addEmployee() {
-//   connection.query(
-
-//   )
-// }
