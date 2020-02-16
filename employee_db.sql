@@ -31,4 +31,4 @@ INSERT INTO jobRole (title, salary, department_id)
 VALUES ("HR lady", 100000, 1), ("Scientist", 60000, 2), ("Lawyer", 5000, 3);
 
 INSERT INTO employee (firstname, lastname, role_id, manager_id)
-VALUES ("Carlos", "Hernandez", 1, null),("Chris", "Hernandez", 1, 1),("Erik", "Hernandez", 1, 2);
+VALUES ("Carlos", "Hernandez", 1, null),("Chris", "Ellis", 1, 1),("Erik", "", 1, 2);
