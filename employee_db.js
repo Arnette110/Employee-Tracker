@@ -35,13 +35,14 @@ function start() {
         "View all employees",
         "View all employees by Department",
         "View all employees by Manager",
+        "View all roles",
+        "View all departments",
         "Add employee",
+        "Add role",
         "Add department",
         "Remove employee",
         "Update employee role",
         "Update employee manager",
-        "View all roles",
-        "Add role",
         "Remove role",
         "EXIT",
       ],
@@ -241,16 +242,20 @@ function viewAll() {
   );
 }
 
+function viewAllRoles() {
+  connection.query("SELECT title FROM jobrole;", (err, results) => {
+    if (err) throw err;
+    console.table(results);
+    start();
+  });
+}
 
 function viewAllDepts() {
-  connection.query(
-    "SELECT departmentName FROM department;",
-    (err, results) => {
-      if (err) throw err;
-      console.table(results);
-      start();
-    },
-  );
+  connection.query("SELECT departmentName FROM department;", (err, results) => {
+    if (err) throw err;
+    console.table(results);
+    start();
+  });
 }
 
 function viewAllMgr() {
@@ -262,4 +267,69 @@ function viewAllMgr() {
       start();
     },
   );
+}
+
+// update employee role
+function updateRole() {
+  connection.query("SELECT * FROM jobrole", (err, res) => {
+    if (err) throw err;
+    const roles = res.map(object => {
+      return {
+        name: `${object.title}`,
+        value: object.id,
+      };
+    });
+    roles.unshift({
+      name: "N/A",
+      value: null,
+    });
+
+    connection.query("SELECT * FROM employee", (err, res) => {
+      if (err) throw err;
+      const employees = res.map(object => {
+        return {
+          name: `${object.firstname} ${object.lastname}`,
+          value: object.id,
+        };
+      });
+      employees.unshift({
+        name: "no manager",
+        value: null,
+      });
+      inquirer
+        .prompt([
+          {
+            name: "employee",
+            type: "list",
+            message: "Which employee would you like to change roles for?",
+            choices: employees,
+          },
+          {
+            name: "newRole",
+            type: "list",
+            message: "What is the employee's new role?",
+            choices: roles,
+          },
+        ])
+        .then(function(answer) {
+          console.log(answer);
+          // when finished prompting, insert a new item into the db with that info
+          connection.query(
+            "UPDATE employee SET ? WHERE ?",
+            [
+              {
+                role_id: answer.newRole,
+              },
+              {
+                id: answer.employee,
+              },
+            ],
+            function(err) {
+              if (err) throw err;
+            },
+            start(),
+          );
+        });
+    });
+  });
 }
