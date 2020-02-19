@@ -37,14 +37,20 @@ function start() {
         "View all employees by Manager",
         "View all roles",
         "View all departments",
+        new inquirer.Separator(),
         "Add employee",
         "Add role",
         "Add department",
+        new inquirer.Separator(),
         "Remove employee",
+        "Remove role",
+        "Remove department",
+        new inquirer.Separator(),
         "Update employee role",
         "Update employee manager",
-        "Remove role",
+        new inquirer.Separator(),
         "EXIT",
+        new inquirer.Separator(),
       ],
     })
     .then(function(answer) {
@@ -67,18 +73,21 @@ function start() {
         addRole();
       } else if (answer.whatDo === "Remove employee") {
         removeEmployee();
+      } else if (answer.whatDo === "Remove role") {
+        removeRole();
+      } else if (answer.whatDo === "Remove department") {
+        removeDept();
       } else if (answer.whatDo === "Update employee role") {
         updateRole();
       } else if (answer.whatDo === "Update employee manager") {
         updateMgr();
-      } else if (answer.whatDo === "Remove role") {
-        removeRole();
       } else if (answer.whatDo === "EXIT") {
         connection.end();
       }
     });
 }
 
+// functions that add to db start!
 // function to add Employee to db
 function addEmployee() {
   connection.query("SELECT * FROM jobrole", (err, res) => {
@@ -178,6 +187,7 @@ function addDepartment() {
     });
 }
 
+// function to add a role to db
 function addRole() {
   connection.query("SELECT * FROM department", (err, res) => {
     if (err) throw err;
@@ -225,23 +235,23 @@ function addRole() {
       });
   });
 }
+// functions that add to db end!
 
+// functions to view db info start!
+// function to view all employees, with name, title, salary, department
 function viewAll() {
-  // query the database for all items being auctioned
+  // query the database for all employees
   connection.query(
     "SELECT employee.firstname, employee.lastname, jobrole.title, jobrole.salary, department.departmentName FROM employee INNER JOIN jobrole ON employee.role_id = jobrole.id INNER JOIN department ON jobrole.department_id = department.id;",
     function(err, results) {
       if (err) throw err;
-      // console.log(results);
-      let db = results;
-      // console.log(db);
-      console.table(db);
-
+      console.table(results);
       start();
     },
   );
 }
 
+// view all available roles
 function viewAllRoles() {
   connection.query("SELECT title FROM jobrole;", (err, results) => {
     if (err) throw err;
@@ -250,6 +260,7 @@ function viewAllRoles() {
   });
 }
 
+// view all available departments
 function viewAllDepts() {
   connection.query("SELECT departmentName FROM department;", (err, results) => {
     if (err) throw err;
@@ -258,6 +269,19 @@ function viewAllDepts() {
   });
 }
 
+function viewAllDept() {
+  // query the database for all employees
+  connection.query(
+    "SELECT employee.firstname, employee.lastname, department.departmentName FROM employee INNER JOIN jobrole ON employee.role_id = jobrole.id INNER JOIN department ON jobrole.department_id = department.id;",
+    function(err, results) {
+      if (err) throw err;
+      console.table(results);
+      start();
+    },
+  );
+}
+
+// view all employees by manager
 function viewAllMgr() {
   connection.query(
     "SELECT employee.firstname, employee.lastname FROM employee INNER JOIN employee AS manager ON employee.id = employee.manager_id",
@@ -268,9 +292,12 @@ function viewAllMgr() {
     },
   );
 }
+// view functions end!
 
+// functions to update existing db items
 // update employee role
 function updateRole() {
+  // collect all available job roles for inquirer below
   connection.query("SELECT * FROM jobrole", (err, res) => {
     if (err) throw err;
     const roles = res.map(object => {
@@ -279,11 +306,7 @@ function updateRole() {
         value: object.id,
       };
     });
-    roles.unshift({
-      name: "N/A",
-      value: null,
-    });
-
+    // collect all available employees for inquirer below
     connection.query("SELECT * FROM employee", (err, res) => {
       if (err) throw err;
       const employees = res.map(object => {
@@ -291,10 +314,6 @@ function updateRole() {
           name: `${object.firstname} ${object.lastname}`,
           value: object.id,
         };
-      });
-      employees.unshift({
-        name: "no manager",
-        value: null,
       });
       inquirer
         .prompt([
@@ -312,7 +331,6 @@ function updateRole() {
           },
         ])
         .then(function(answer) {
-          console.log(answer);
           // when finished prompting, insert a new item into the db with that info
           connection.query(
             "UPDATE employee SET ? WHERE ?",
@@ -331,5 +349,122 @@ function updateRole() {
           );
         });
     });
+  });
+}
+
+// functions to delete from db
+
+// delete employee
+function removeEmployee() {
+  connection.query("SELECT * FROM employee", (err, res) => {
+    if (err) throw err;
+    const employees = res.map(object => {
+      return {
+        name: `${object.firstname} ${object.lastname}`,
+        value: object.id,
+      };
+    });
+    inquirer
+      .prompt([
+        {
+          name: "employee",
+          type: "list",
+          message: "Which employee would you like to remove?",
+          choices: employees,
+        },
+      ])
+      .then(function(answer) {
+        connection.query(
+          "DELETE FROM employee WHERE ?",
+          [
+            {
+              id: answer.employee,
+            },
+          ],
+          function(err) {
+            if (err) throw err;
+          },
+          console.log("The employee was removed from the database!"),
+          start(),
+        );
+      });
+  });
+}
+
+// delete role
+function removeRole() {
+  connection.query("SELECT * FROM jobrole", (err, res) => {
+    if (err) throw err;
+    const roles = res.map(object => {
+      return {
+        name: `${object.title}`,
+        value: object.id,
+      };
+    });
+    inquirer
+      .prompt([
+        {
+          name: "role",
+          type: "list",
+          message: "Which role would you like to remove?",
+          choices: roles,
+        },
+      ])
+      .then(function(answer) {
+        connection.query(
+          "DELETE FROM jobrole WHERE ?",
+          [
+            {
+              id: answer.role,
+            },
+            {
+              title: answer.role,
+            },
+          ],
+          function(err) {
+            if (err) throw err;
+          },
+          start(),
+        );
+      });
+  });
+}
+
+// delete department
+function removeDept() {
+  connection.query("SELECT * FROM department", (err, res) => {
+    if (err) throw err;
+    const departments = res.map(object => {
+      return {
+        name: `${object.departmentName}`,
+        value: object.id,
+      };
+    });
+    inquirer
+      .prompt([
+        {
+          name: "department",
+          type: "list",
+          message: "Which department would you like to remove?",
+          choices: departments,
+        },
+      ])
+      .then(function(answer) {
+        connection.query(
+          "DELETE FROM department WHERE ?",
+          [
+            {
+              id: answer.department,
+            },
+            {
+              departmentName: answer.department,
+            },
+          ],
+          function(err) {
+            if (err) throw err;
+          },
+          start(),
+        );
+      });
   });
 }
