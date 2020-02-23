@@ -10,10 +10,10 @@ var connection = mysql.createConnection({
   port: 3306,
 
   // Your username
-  user: "root",
+  user: "",
 
   // Your password
-  password: "mysqlroot",
+  password: "",
   database: "employee_db",
 });
 
@@ -269,6 +269,7 @@ function viewAllDepts() {
   });
 }
 
+// view all employees and their respective departments
 function viewAllDept() {
   // query the database for all employees
   connection.query(
@@ -283,14 +284,17 @@ function viewAllDept() {
 
 // view all employees by manager
 function viewAllMgr() {
-  connection.query(
-    "SELECT employee.firstname, employee.lastname FROM employee INNER JOIN employee AS manager ON employee.id = employee.manager_id",
-    (err, results) => {
-      if (err) throw err;
-      console.table(results);
-      start();
-    },
-  );
+  console.log("!!! This function is under construction !!!");
+  start();
+  // connection.query(
+  //   "SELECT e.id, e.firstname, e.lastname, e.manager_id, m.firstname, m.lastname FROM employee e INNER JOIN employee m ON e.manager_id = m.id ;",
+
+  //   (err, results) => {
+  //     if (err) throw err;
+  //     console.table(results);
+  //     start();
+  //   },
+  // );
 }
 // view functions end!
 
@@ -352,8 +356,12 @@ function updateRole() {
   });
 }
 
-// functions to delete from db
+function updateMgr(){
+  console.log("!!! This feature is under construction !!!");
+  start();
+}
 
+// functions to delete from db
 // delete employee
 function removeEmployee() {
   connection.query("SELECT * FROM employee", (err, res) => {
